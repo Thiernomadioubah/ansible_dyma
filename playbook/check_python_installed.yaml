@@ -1,0 +1,16 @@
+- name: Vérifier et installer Python3
+  hosts: all
+  gather_facts: false
+  become: true
+
+  tasks:
+    - name: Vérifier si Python3 est installé
+      ansible.builtin.command: which python3
+      register: python_installed
+      ignore_errors: true
+      changed_when: false
+
+    - name: Installer s'il n'est pas présent
+      ansible.builtin.raw: apt update && apt install -y python3
+      when: python_installed.rc != 0
+      changed_when: python_installed.rc != 0
