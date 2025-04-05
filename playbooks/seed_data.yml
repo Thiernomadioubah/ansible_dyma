@@ -1,0 +1,41 @@
+---
+- name: Exécuter le script de seed des articles
+  hosts: webserver
+  become: yes
+  vars_files:
+    - /root/ansible/inventories/production/group_vars/mysql_vault.yml
+
+  tasks:
+    - name: Installer PHP
+      ansible.builtin.apt:
+        name: php
+        state: present
+
+    - name: Définir les variables d'environnement pour le script de seed et exécuter le script
+      ansible.builtin.shell: |
+        export DB_HOST={{ hostvars[groups['dbserver'][0]].ansible_host }}
+        export DB_NAME={{ mysql_database }}
+        export DB_USER={{ mysql_user }}
+        export DB_PASSWORD={{ mysql_password }}
+        php /var/www/app/data/seed-articles.php
+
+      args:
+        executable: /bin/bash
+      register: seed_output
+      ignore_errors: yes
+
+    - name: Afficher la sortie du script de seed
+      ansible.builtin.debug:
+        var: seed_output.stdout
+
+    - name: Afficher les erreurs du script de seed
+      ansible.builtin.debug:
+        var: seed_output.stderr
+
+    # - name: Afficher la sortie du script de seed
+    #   ansible.builtin.debug:
+    #     msg: 
+    #       - "{{ hostvars[groups['dbserver'][0]].ansible_host }}"
+    #       - "{{ mysql_database }}"
+    #       - "{{ mysql_user }}"
+    #       - "{{ mysql_password }}"

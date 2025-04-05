@@ -1,0 +1,40 @@
+---
+- name: Mettre à jour les paquets APT
+  ansible.builtin.apt:
+    update_cache: yes
+
+- name: Installer MySQL server
+  ansible.builtin.apt:
+    name: mysql-server
+    state: present
+
+- name: Installer les dépendances Python pour MySQL
+  ansible.builtin.apt:
+    name: python3-mysqldb
+    state: present
+
+- name: Configurer MySQL pour écouter sur toutes les interfaces
+  ansible.builtin.lineinfile:
+    path: /etc/mysql/mysql.conf.d/mysqld.cnf
+    regexp: '^bind-address'
+    line: 'bind-address = 0.0.0.0'
+  notify: Restart MySQL
+
+- name: Assurer que MySQL est en cours d'exécution
+  ansible.builtin.service:
+    name: mysql
+    state: started
+    enabled: true
+
+- name: Créer la base de données MySQL
+  community.mysql.mysql_db:
+    name: "{{ mysql_database }}"
+    state: present
+
+- name: Créer l'utilisateur MySQL avec accès depuis n'importe où
+  community.mysql.mysql_user:
+    name: "{{ mysql_user }}"
+    password: "{{ mysql_password }}"
+    priv: "{{ mysql_database }}.*:ALL"
+    host: '%'
+    state: present

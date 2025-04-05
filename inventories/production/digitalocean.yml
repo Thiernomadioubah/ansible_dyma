@@ -1,5 +1,5 @@
 plugin: community.digitalocean.digitalocean
-api_token: dop_v1_50fe40e2a3e7e037f9dc8375267ca43f0dbf1e2ca6e0f6423c5c9a67d209a247
+api_token: {{do token}}
 attributes:
   - id
   - name

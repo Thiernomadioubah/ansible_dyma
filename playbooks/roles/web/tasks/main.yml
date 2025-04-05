@@ -1,0 +1,44 @@
+---
+- name: Installer NGINX
+  ansible.builtin.apt:
+    name: nginx
+    state: present
+  notify: Restart NGINX
+
+- name: Copier le fichier de configuration NGINX
+  ansible.builtin.template:
+    src: nginx.conf.j2
+    dest: /etc/nginx/sites-enabled/default
+  notify: Restart NGINX
+
+- name: Assurer que NGINX est en cours d'exécution
+  ansible.builtin.service:
+    name: nginx
+    state: started
+    enabled: true
+
+- name: Installer PHP 8.3-FPM et les extensions nécessaires
+  ansible.builtin.apt:
+    name:
+      - php8.3-fpm
+      - php8.3-mysql
+      - php8.3-mbstring
+    state: present
+  notify: Restart PHP-FPM
+
+- name: Assurer que PHP-FPM est en cours d'exécution
+  ansible.builtin.service:
+    name: php8.3-fpm
+    state: started
+    enabled: true
+
+- name: Installer Git
+  ansible.builtin.apt:
+    name: git
+    state: present
+
+- name: Cloner le dépôt de code PHP
+  ansible.builtin.git:
+    repo: 'https://github.com/dymafr/ansible-projet2.git'
+    dest: /var/www/app
+    update: yes

@@ -1,0 +1,25 @@
+server {
+  listen 80;
+  listen [::]:80;
+
+  root /var/www/app;
+
+  index index.php;
+
+  error_page 404 500 /error.php;
+
+  location / {
+    try_files $uri $uri/ =404;
+  }
+
+  location ~ \.php$ {
+    include snippets/fastcgi-php.conf;
+
+    fastcgi_param DB_HOST {{ hostvars[groups['dbserver'][0]].ansible_host }};
+    fastcgi_param DB_NAME {{ mysql_database }};
+    fastcgi_param DB_USER {{ mysql_user }};
+    fastcgi_param DB_PASSWORD {{ mysql_password }};
+
+    fastcgi_pass unix:/run/php/php8.3-fpm.sock;
+  }
+}

@@ -1,0 +1,18 @@
+---
+- name: Déployer le serveur MySQL
+  hosts: dbserver
+  become: yes
+  vars_files:
+    - /root/ansible/inventories/production/group_vars/mysql_vault.yml
+  roles:
+    - { role: mysql, tags: ["mysql"] }
+
+- name: Déployer le serveur Web
+  hosts: webserver
+  become: true
+  vars_files:
+    - /root/ansible/inventories/production/group_vars/mysql_vault.yml
+  roles:
+    - role: web
+      tags: 
+        - web
