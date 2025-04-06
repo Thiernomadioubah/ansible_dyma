@@ -1,0 +1,73 @@
+---
+- name: Mettre à jour les paquets
+  yum:
+    name: "*"
+    state: latest
+
+- name: Télécharger le dépôt MySQL
+  ansible.builtin.command:
+    cmd: sudo wget https://dev.mysql.com/get/mysql84-community-release-el9-1.noarch.rpm
+    chdir: /tmp
+
+- name: Installer le dépôt MySQL
+  ansible.builtin.command:
+    cmd: yum localinstall -y /tmp/mysql84-community-release-el9-1.noarch.rpm
+
+- name: Installer MySQL server
+  ansible.builtin.yum:
+    name: mysql-community-server
+    state: present
+
+- name: Configurer MySQL pour écouter sur toutes les interfaces
+  ansible.builtin.lineinfile:
+    path: /etc/my.cnf
+    regexp: '^bind-address'
+    line: 'bind-address = 0.0.0.0'
+    state: present
+
+- name: Ajouter temporairement skip-grant-tables à MySQL
+  ansible.builtin.lineinfile:
+    path: /etc/my.cnf
+    line: 'skip-grant-tables'
+    state: present
+  notify: Restart MYSQL
+
+- name: Redémarrer MySQL
+  ansible.builtin.systemd:
+    name: mysqld
+    state: restarted
+    enabled: yes
+
+- name: flush_handlers
+  meta: flush_handlers
+
+- name: Créer un script temporaire pour MySQL
+  ansible.builtin.copy:
+    dest: /tmp/create_mysql_user.sh
+    content: |
+      #!/bin/bash
+      sudo mysql -uroot <<EOF
+      FLUSH PRIVILEGES;
+      ALTER USER 'root'@'localhost' IDENTIFIED BY '{{ mysql_root_password }}';
+      CREATE DATABASE IF NOT EXISTS {{ mysql_database }};
+      DROP USER IF EXISTS '{{ mysql_user }}'@'%';
+      CREATE USER '{{ mysql_user }}'@'%' IDENTIFIED BY '{{ mysql_password }}';
+      GRANT ALL PRIVILEGES ON {{ mysql_database }}.* TO '{{ mysql_user }}'@'%';
+      FLUSH PRIVILEGES;
+      EOF
+    mode: '0755'
+
+- name: Exécuter le script pour MySQL
+  ansible.builtin.command: /tmp/create_mysql_user.sh
+
+- name: Supprimer le script temporaire de création de l'utilisateur
+  ansible.builtin.file:
+    path: /tmp/create_mysql_user.sh
+    state: absent
+
+- name: Supprimer skip-grant-tables à MySQL
+  ansible.builtin.lineinfile:
+    path: /etc/my.cnf
+    line: 'skip-grant-tables'
+    state: absent
+  notify: Restart MYSQL

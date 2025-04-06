@@ -1,0 +1,52 @@
+---
+- name: Installer NGINX
+  ansible.builtin.yum:
+    name: nginx
+    state: present
+  notify: Restart NGINX
+
+# - name: Copier le fichier de configuration NGINX
+#   ansible.builtin.debug:
+#     msg: 
+#       - "{{ mysql_database }}"
+#       - "{{ mysql_user }}"
+#       - "{{ mysql_password }}"
+#       - "{{ mysql_root_password }}"
+
+- name: Copier le fichier de configuration NGINX
+  ansible.builtin.template:
+    src: nginx.conf.j2
+    dest: /etc/nginx/nginx.conf
+  notify: Restart NGINX
+
+- name: Assurer que NGINX est en cours d'exécution
+  ansible.builtin.service:
+    name: nginx
+    state: started
+    enabled: true
+
+- name: Installer PHP-FPM et les extensions nécessaires
+  ansible.builtin.yum:
+    name:
+      - php-fpm
+      - php-mysqlnd
+      - php-mbstring
+    state: present
+  notify: Restart PHP-FPM
+
+- name: Assurer que PHP-FPM est en cours d'exécution
+  ansible.builtin.service:
+    name: php-fpm
+    state: started
+    enabled: true
+
+- name: Installer Git
+  ansible.builtin.yum:
+    name: git
+    state: present
+
+- name: Cloner le dépôt de code PHP
+  ansible.builtin.git:
+    repo: 'https://github.com/dymafr/ansible-projet2.git'
+    dest: /var/www/app
+    update: true

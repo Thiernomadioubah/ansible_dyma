@@ -1,0 +1,10 @@
+- name: Ajouter les clés SSH au fichier known_hosts
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Ajoute les clés SSH des nodes gérées au fichier known_hosts de la machine locale
+      ansible.builtin.known_hosts:
+        name: "{{ item }}"
+        key: "{{ lookup('pipe', 'ssh-keyscan -H ' + item) }}"
+        path: "{{ lookup('env', 'HOME') }}/.ssh/known_hosts"
+      loop: "{{ groups['managed'] }}"

@@ -1,0 +1,15 @@
+plugin: amazon.aws.aws_ec2
+regions:
+  - eu-west-3
+exclude_filters:
+  - tag:Name:
+    - "ansible-controle"
+filters:
+  instance-state-name: running
+keyed_groups:
+  - key: tags.Name
+    prefix: 'aws'
+  - key: tags.type
+    prefix: 'aws'
+groups:
+  managed: "'node' in tags.Name"
